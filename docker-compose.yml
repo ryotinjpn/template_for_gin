@@ -1,0 +1,46 @@
+services:
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: containers/gin/Dockerfile
+    ports:
+      - 8080:8080
+    volumes:
+      - ./application:/code
+  db:
+    container_name: db
+    image: postgres:16.3
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U "${POSTGRES_USER:-postgres}" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: template_for_gin
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      # デバッグ用ポート
+      - "5432:5432"
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - 81:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: gin@example.com
+      PGADMIN_DEFAULT_PASSWORD: ginpassword
+    volumes:
+      - ./docker/pgadmin:/var/lib/pgadmin
+    depends_on:
+      - db
+volumes:
+  db_data:
+networks:
+  default:
+    name: testnet
